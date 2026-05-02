@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ClipBoard Speech</string>
+    <string name="app_subtitle">Offline · Google TTS Engine</string>
+    <string name="hint_enter_text">Type or paste text here…</string>
+    <string name="btn_speak">Speak</string>
+    <string name="btn_pause">Pause</string>
+    <string name="btn_resume">Resume</string>
+    <string name="btn_stop">Stop</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_clear">Clear</string>
+    <string name="btn_paste">Paste</string>
+    <string name="label_speed">Speed</string>
+    <string name="label_pitch">Pitch</string>
+    <string name="label_voice">Voice</string>
+    <string name="label_select_voice">Select Voice</string>
+    <string name="label_on_device">On-device</string>
+    <string name="label_network">Network</string>
+    <string name="msg_pasted">Pasted from clipboard</string>
+    <string name="msg_clipboard_empty">Clipboard is empty</string>
+    <string name="msg_no_text">Enter some text first</string>
+    <string name="msg_tts_unavailable">TTS engine unavailable</string>
+    <string name="msg_tts_error">TTS error occurred</string>
+    <string name="msg_saved">Saved: %s</string>
+    <string name="msg_save_failed">Failed to save file</string>
+    <string name="msg_cleared">Text cleared</string>
+    <string name="voice_sheet_title">Select Voice</string>
+    <string name="chars_count">%d chars</string>
+    <string name="cd_voice_selector">Select TTS voice</string>
+    <string name="btn_summary">Summary</string>
+    <string name="btn_ai_summary">AI Summary</string>
+    <string name="msg_ai_config_missing">No AI config. Set up in AI Config tab.</string>
+    <string name="msg_ai_error">AI request failed</string>
+    <string name="msg_copied">Copied to clipboard</string>
+</resources>

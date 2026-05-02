@@ -1,0 +1,23 @@
+# Built outputs
+*.apk
+*.ap_
+*.aab
+build/
+app/build/
+
+# Gradle
+.gradle/
+local.properties
+gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystore
+*.jks
+*.keystore

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/surface"
+    android:paddingTop="20dp"
+    android:paddingBottom="16dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <TextView
+        android:id="@+id/tvSummaryTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quick Summary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/onSurface"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Loading state -->
+    <ProgressBar
+        android:id="@+id/progressSummary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+    <!-- Scrollable content -->
+    <ScrollView
+        android:id="@+id/scrollSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tvSummaryContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textColor="@color/onSurface"
+            android:lineSpacingMultiplier="1.5" />
+    </ScrollView>
+
+    <!-- Action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnUseTts"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Use for TTS"
+            android:layout_marginEnd="8dp"
+            android:stateListAnimator="@null" />
+
+        <Button
+            android:id="@+id/btnCopySummary"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Copy"
+            android:backgroundTint="@color/surfaceVariant"
+            android:textColor="@color/onSurface"
+            android:stateListAnimator="@null" />
+    </LinearLayout>
+
+</LinearLayout>

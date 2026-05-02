@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Info banner -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/secondaryContainer"
+            android:padding="14dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Configure your AI provider to enable AI summaries. Credentials are stored locally on device."
+                android:textSize="13sp"
+                android:textColor="@color/onSecondaryContainer" />
+        </LinearLayout>
+
+        <!-- API Key -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="API Key"
+            android:layout_marginBottom="12dp"
+            app:endIconMode="password_toggle"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etApiKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- API Base URL -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilApiUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="API Base URL"
+            android:layout_marginBottom="12dp"
+            app:helperText="OpenAI-compatible endpoint"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etApiUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="https://api.openai.com/v1"
+                android:inputType="textNoSuggestions"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Model -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Model"
+            android:layout_marginBottom="12dp"
+            app:helperText="e.g. gpt-4o, claude-3-haiku"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etModel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="gpt-4o-mini"
+                android:inputType="text"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- System Prompt -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSystemPrompt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="System Prompt"
+            android:layout_marginBottom="20dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSystemPrompt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="You are a helpful assistant..."
+                android:inputType="textMultiLine"
+                android:minLines="3"
+                android:gravity="top"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Save button -->
+        <Button
+            android:id="@+id/btnSaveAiConfig"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Save Configuration"
+            android:textSize="15sp"
+            android:layout_marginBottom="10dp"
+            android:stateListAnimator="@null" />
+
+        <!-- Test Connection button -->
+        <Button
+            android:id="@+id/btnTestConnection"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Test Connection"
+            android:textSize="15sp"
+            android:layout_marginBottom="10dp"
+            android:textColor="@color/primary"
+            android:backgroundTint="@color/primaryContainer"
+            android:stateListAnimator="@null" />
+
+        <!-- Test result card (hidden until test runs) -->
+        <LinearLayout
+            android:id="@+id/cardTestResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="top"
+            android:padding="14dp"
+            android:layout_marginBottom="10dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvTestResultIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="1dp" />
+
+            <TextView
+                android:id="@+id/tvTestResultMsg"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.5" />
+
+        </LinearLayout>
+
+        <!-- Clear button -->
+        <Button
+            android:id="@+id/btnClearAiConfig"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Clear Configuration"
+            android:textSize="15sp"
+            android:textColor="@color/error"
+            android:backgroundTint="@color/errorContainer"
+            android:visibility="gone"
+            android:stateListAnimator="@null" />
+
+    </LinearLayout>
+</ScrollView>
