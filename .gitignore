@@ -21,3 +21,6 @@ captures/
 # Keystore
 *.jks
 *.keystore
+
+# Claude Code internal
+.claude/
