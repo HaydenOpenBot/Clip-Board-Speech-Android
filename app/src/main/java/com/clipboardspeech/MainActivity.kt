@@ -29,6 +29,11 @@ import com.clipboardspeech.data.AppDatabase
 import com.clipboardspeech.data.HistoryEntry
 import com.clipboardspeech.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -108,6 +113,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setupButtons()
         setupTextWatcher()
         updateRecallButtonState()   // restore recall button state from previous session
+        observeProcessNoteWork()
 
         // 3a: Load text from history if launched with LOAD_ID
         loadedEntryId = intent.getLongExtra("LOAD_ID", -1L)
@@ -314,6 +320,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val text = binding.etInput.text?.toString()?.trim()?.ifEmpty { null } ?: fullText
             if (text.isNotEmpty()) performAiSummary(text)
         }
+        binding.btnProcessNote.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = clipboard.primaryClip
+            val text = clip?.getItemAt(0)?.coerceToText(this)?.toString()?.trim() ?: ""
+            if (text.isEmpty()) { showSnackbar("剪貼板是空的"); return@setOnClickListener }
+            performProcessNote(text)
+        }
+
         binding.btnRecallAiSummary.setOnClickListener {
             if (currentAiSummary != null) {
                 showSummaryPanel(title = "AI Summary", isAi = true)
@@ -680,6 +694,55 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         )
         sheet.show(supportFragmentManager, "voice_sheet")
+    }
+
+    // ---- Process Note ----
+
+    private fun observeProcessNoteWork() {
+        WorkManager.getInstance(this)
+            .getWorkInfosForUniqueWorkLiveData(ProcessNoteWorker.UNIQUE_WORK_NAME)
+            .observe(this) { workInfos ->
+                val active = workInfos?.any {
+                    it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING
+                } == true
+                binding.btnProcessNote.isEnabled = !active
+                binding.btnProcessNote.alpha = if (active) 0.4f else 1.0f
+                binding.btnProcessNote.text = if (active) "⏳ 處理中" else "📝 筆記"
+            }
+    }
+
+    private fun performProcessNote(text: String) {
+        val endpoint = ProcessNoteConfigFragment.loadEndpointUrl(this)
+        val dao = AppDatabase.get(this).processNoteDao()
+
+        lifecycleScope.launch {
+            val recordId = withContext(Dispatchers.IO) {
+                dao.insert(
+                    com.clipboardspeech.data.ProcessNoteEntry(
+                        contentPreview = text.take(120),
+                        status = "pending",
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+            }
+
+            val inputData = Data.Builder()
+                .putString(ProcessNoteWorker.KEY_CONTENT, text)
+                .putString(ProcessNoteWorker.KEY_ENDPOINT, endpoint)
+                .putLong(ProcessNoteWorker.KEY_RECORD_ID, recordId)
+                .build()
+
+            val workRequest = OneTimeWorkRequestBuilder<ProcessNoteWorker>()
+                .setInputData(inputData)
+                .build()
+
+            WorkManager.getInstance(this@MainActivity).enqueueUniqueWork(
+                ProcessNoteWorker.UNIQUE_WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                workRequest
+            )
+            showSnackbar("📝 筆記已排程，背景處理中…關閉 App 亦可完成")
+        }
     }
 
     // ---- Quick Summary (3e) ----

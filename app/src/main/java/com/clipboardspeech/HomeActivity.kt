@@ -23,6 +23,7 @@ class HomeActivity : AppCompatActivity(), HomeFragment.NavigationCallback {
                 R.id.nav_home -> { loadFragment(HomeFragment()); true }
                 R.id.nav_history -> { loadFragment(HistoryFragment()); true }
                 R.id.nav_ai -> { loadFragment(AiConfigFragment()); true }
+                R.id.nav_process_note -> { loadFragment(ProcessNoteConfigFragment()); true }
                 else -> false
             }
         }

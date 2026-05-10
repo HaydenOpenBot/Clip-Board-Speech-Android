@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Info banner -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/secondaryContainer"
+            android:padding="14dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="設定「📝 筆記」按鈕的後端端點。內容將以 POST 方式傳送至此 URL，並儲存至 Obsidian 知識庫。"
+                android:textSize="13sp"
+                android:textColor="@color/onSecondaryContainer" />
+        </LinearLayout>
+
+        <!-- Endpoint URL -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilEndpointUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Endpoint URL"
+            android:layout_marginBottom="20dp"
+            app:helperText="POST /api/process-note"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etEndpointUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="https://claude-pm.gynlhmc.com/api/process-note"
+                android:inputType="textNoSuggestions"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Save button -->
+        <Button
+            android:id="@+id/btnSaveProcessNoteConfig"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="儲存設定"
+            android:textSize="15sp"
+            android:layout_marginBottom="10dp"
+            android:stateListAnimator="@null" />
+
+        <!-- Test Connection button -->
+        <Button
+            android:id="@+id/btnTestProcessNoteConnection"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="測試連線"
+            android:textSize="15sp"
+            android:layout_marginBottom="10dp"
+            android:textColor="@color/primary"
+            android:backgroundTint="@color/primaryContainer"
+            android:stateListAnimator="@null" />
+
+        <!-- Test result card (hidden until test runs) -->
+        <LinearLayout
+            android:id="@+id/cardProcessNoteTestResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="top"
+            android:padding="14dp"
+            android:layout_marginBottom="10dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvProcessNoteTestResultIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="1dp" />
+
+            <TextView
+                android:id="@+id/tvProcessNoteTestResultMsg"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.5" />
+
+        </LinearLayout>
+
+        <!-- Submission log section -->
+        <TextView
+            android:id="@+id/tvLogHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="提交紀錄"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/onSurfaceVariant"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvLogEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="尚未有提交紀錄"
+            android:textSize="12sp"
+            android:textColor="@color/onSurfaceVariant"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvProcessNoteLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Clear button -->
+        <Button
+            android:id="@+id/btnClearProcessNoteConfig"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="清除設定"
+            android:textSize="15sp"
+            android:textColor="@color/error"
+            android:backgroundTint="@color/errorContainer"
+            android:visibility="gone"
+            android:stateListAnimator="@null" />
+
+    </LinearLayout>
+</ScrollView>
