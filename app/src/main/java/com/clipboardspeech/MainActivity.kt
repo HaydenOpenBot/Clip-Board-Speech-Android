@@ -81,10 +81,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     companion object {
         private const val SAVED_AI_SUMMARY_KEY = "saved_ai_summary"
+        private const val KEY_PENDING_AI_SUMMARY_ENTRY_ID = "pending_ai_summary_entry_id"
     }
 
     // Speed/pitch: slider max=15, progress 0..15 maps to 0.5..2.0 (step 0.1)
-    private var speechRate: Float = 1.4f
+    private var speechRate: Float = 1.8f
     private var pitchValue: Float = 1.0f
 
     private val utteranceId = "CBS_UTTERANCE"
@@ -114,6 +115,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setupTextWatcher()
         updateRecallButtonState()   // restore recall button state from previous session
         observeProcessNoteWork()
+        observeAiSummaryWork()
 
         // 3a: Load text from history if launched with LOAD_ID
         loadedEntryId = intent.getLongExtra("LOAD_ID", -1L)
@@ -254,9 +256,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
-        // Default progress=9 -> 1.4x
-        binding.seekSpeed.progress = 9
-        binding.tvSpeedValue.text = "1.4×"
+        // Default progress=13 -> 1.8x
+        binding.seekSpeed.progress = 13
+        binding.tvSpeedValue.text = "1.8×"
 
         // Pitch: progress 0..15 -> pitch 0.5..2.0
         binding.seekPitch.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -318,13 +320,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
         binding.btnRegenerateAiSummary.setOnClickListener {
             val text = binding.etInput.text?.toString()?.trim()?.ifEmpty { null } ?: fullText
-            if (text.isNotEmpty()) performAiSummary(text)
+            if (text.isNotEmpty()) {
+                hideSummaryPanel()
+                performAiSummary(text)
+            }
         }
         binding.btnProcessNote.setOnClickListener {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = clipboard.primaryClip
-            val text = clip?.getItemAt(0)?.coerceToText(this)?.toString()?.trim() ?: ""
-            if (text.isEmpty()) { showSnackbar("剪貼板是空的"); return@setOnClickListener }
+            val text = binding.etInput.text?.toString()?.trim() ?: ""
+            if (text.isEmpty()) { showSnackbar("請先輸入或貼上文字"); return@setOnClickListener }
             performProcessNote(text)
         }
 
@@ -761,131 +764,92 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     // ---- AI Summary (3f) ----
 
-    private fun performAiSummary(text: String) {
-        // Always open the panel first so errors are shown inline
-        showSummaryPanel(title = "AI Summary", isAi = true)
-
-        val prefs = getSharedPreferences(AiConfigFragment.PREFS_NAME, Context.MODE_PRIVATE)
-        val configJson = prefs.getString(AiConfigFragment.KEY_AI_CONFIG, null)
-        if (configJson == null) {
-            showSummaryError("AI is not configured. Go to the AI Config tab and enter your API Key, Base URL, and Model.")
-            return
-        }
-
-        val config = try { JSONObject(configJson) } catch (e: Exception) {
-            showSummaryError("AI configuration is invalid. Go to the AI Config tab and re-enter your settings.")
-            return
-        }
-
-        val apiKey = config.optString("apiKey")
-        val url = config.optString("url").trimEnd('/')
-        val model = config.optString("model").ifEmpty { "gpt-4o-mini" }
-        val systemPrompt = config.optString("systemPrompt").ifEmpty { "You are a helpful assistant." }
-
-        if (apiKey.isEmpty() || url.isEmpty()) {
-            showSummaryError("API Key and Base URL are required. Go to the AI Config tab to complete your setup.")
-            return
-        }
-
-        showSummaryLoading(true)
-        binding.btnAiSummary.isEnabled = false
-
-        val anthropic = isAnthropicUrl(url)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val endpoint = if (anthropic) "$url/messages" else "$url/chat/completions"
-
-                // Anthropic format: system is a top-level field, not a message
-                val body = if (anthropic) {
-                    JSONObject().apply {
-                        put("model", model)
-                        put("max_tokens", 1024)
-                        put("system", systemPrompt)
-                        put("messages", JSONArray().apply {
-                            put(JSONObject().apply {
-                                put("role", "user")
-                                put("content", "Summarize the following text concisely:\n\n$text")
-                            })
-                        })
-                    }.toString()
-                } else {
-                    JSONObject().apply {
-                        put("model", model)
-                        put("max_tokens", 512)
-                        put("messages", JSONArray().apply {
-                            put(JSONObject().apply {
-                                put("role", "system")
-                                put("content", systemPrompt)
-                            })
-                            put(JSONObject().apply {
-                                put("role", "user")
-                                put("content", "Summarize the following text concisely:\n\n$text")
-                            })
-                        })
-                    }.toString()
-                }
-
-                val request = Request.Builder()
-                    .url(endpoint)
-                    .addHeader("Authorization", "Bearer $apiKey")
-                    .addHeader("Content-Type", "application/json")
-                    .apply { if (anthropic) addHeader("anthropic-version", "2023-06-01") }
-                    .post(body.toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                val response = httpClient.newCall(request).execute()
-                val responseBody = response.body?.string() ?: ""
-                val code = response.code
-
-                if (!response.isSuccessful) {
-                    val errMsg = parseAiError(code, responseBody)
-                    withContext(Dispatchers.Main) {
-                        showSummaryError(errMsg)
-                        binding.btnAiSummary.isEnabled = true
+    private fun observeAiSummaryWork() {
+        WorkManager.getInstance(this)
+            .getWorkInfosForUniqueWorkLiveData(AiSummaryWorker.UNIQUE_WORK_NAME)
+            .observe(this) { workInfos ->
+                val info = workInfos?.firstOrNull() ?: return@observe
+                when (info.state) {
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.RUNNING -> {
+                        binding.btnAiSummary.isEnabled = false
+                        binding.btnAiSummary.alpha = 0.4f
+                        binding.btnAiSummary.text = "⏳ 分析中"
                     }
-                    return@launch
-                }
-
-                val result = JSONObject(responseBody)
-                // Parse content from either Anthropic or OpenAI response format
-                val content = if (anthropic) {
-                    val contentArr = result.getJSONArray("content")
-                    (0 until contentArr.length())
-                        .mapNotNull { i ->
-                            val obj = contentArr.getJSONObject(i)
-                            if (obj.optString("type") == "text") obj.optString("text") else null
+                    WorkInfo.State.SUCCEEDED -> {
+                        binding.btnAiSummary.isEnabled = true
+                        binding.btnAiSummary.alpha = 1.0f
+                        binding.btnAiSummary.text = "AI Summary"
+                        val prefs = getSharedPreferences(AiConfigFragment.PREFS_NAME, Context.MODE_PRIVATE)
+                        val entryId = prefs.getLong(KEY_PENDING_AI_SUMMARY_ENTRY_ID, loadedEntryId)
+                        if (entryId != -1L) {
+                            lifecycleScope.launch {
+                                val entry = withContext(Dispatchers.IO) {
+                                    AppDatabase.get(this@MainActivity).historyDao().getById(entryId)
+                                }
+                                if (entry?.aiSummary != null) {
+                                    currentAiSummary = entry.aiSummary
+                                    updateRecallButtonState()
+                                    showSummaryPanel(title = "AI Summary", isAi = true)
+                                    showSummaryContent(entry.aiSummary, saveAsAiSummary = false)
+                                }
+                            }
                         }
-                        .firstOrNull()?.trim()
-                        ?: throw Exception("No text content in response")
-                } else {
-                    result.getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content")
-                }
-
-                withContext(Dispatchers.Main) {
-                    showSummaryLoading(false)
-                    showSummaryContent(content, saveAsAiSummary = true)
-                    binding.btnAiSummary.isEnabled = true
-                }
-            } catch (e: java.net.UnknownHostException) {
-                withContext(Dispatchers.Main) {
-                    showSummaryError("Cannot reach the server. Check your API Base URL and internet connection.")
-                    binding.btnAiSummary.isEnabled = true
-                }
-            } catch (e: java.net.SocketTimeoutException) {
-                withContext(Dispatchers.Main) {
-                    showSummaryError("Request timed out. The server did not respond in time. Please try again.")
-                    binding.btnAiSummary.isEnabled = true
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showSummaryError("Request failed: ${e.message ?: "Unknown error"}.")
-                    binding.btnAiSummary.isEnabled = true
+                    }
+                    WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+                        binding.btnAiSummary.isEnabled = true
+                        binding.btnAiSummary.alpha = 1.0f
+                        binding.btnAiSummary.text = "AI Summary"
+                        if (info.state == WorkInfo.State.FAILED) showSnackbar("AI Summary 失敗，請重試")
+                    }
+                    else -> {}
                 }
             }
+    }
+
+    private fun performAiSummary(text: String) {
+        val prefs = getSharedPreferences(AiConfigFragment.PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getString(AiConfigFragment.KEY_AI_CONFIG, null) == null) {
+            showSnackbar("請先至 AI Config 設定 API Key 與 Base URL")
+            return
+        }
+
+        lifecycleScope.launch {
+            val dao = AppDatabase.get(this@MainActivity).historyDao()
+            val entryId: Long = when {
+                loadedEntryId != -1L -> loadedEntryId
+                else -> {
+                    val existing = withContext(Dispatchers.IO) { dao.findByText(text) }
+                    existing?.id ?: withContext(Dispatchers.IO) {
+                        dao.insertAndGetId(
+                            HistoryEntry(
+                                name = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date()) + ".txt",
+                                fullText = text,
+                                preview = text.take(120),
+                                charCount = text.length,
+                                savedAt = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                }
+            }
+            loadedEntryId = entryId
+            prefs.edit().putLong(KEY_PENDING_AI_SUMMARY_ENTRY_ID, entryId).apply()
+
+            val inputData = Data.Builder()
+                .putLong(AiSummaryWorker.KEY_ENTRY_ID, entryId)
+                .putString(AiSummaryWorker.KEY_TEXT, text)
+                .build()
+
+            val workRequest = OneTimeWorkRequestBuilder<AiSummaryWorker>()
+                .setInputData(inputData)
+                .build()
+
+            WorkManager.getInstance(this@MainActivity).enqueueUniqueWork(
+                AiSummaryWorker.UNIQUE_WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                workRequest
+            )
+            showSnackbar("⏳ AI Summary 分析中，完成後自動顯示")
         }
     }
 
