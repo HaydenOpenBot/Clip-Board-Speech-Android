@@ -165,5 +165,123 @@
             android:visibility="gone"
             android:stateListAnimator="@null" />
 
+        <!-- ── MiniMax 語音 (cloud TTS) ── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MiniMax 語音"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/onSurface"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="啟用後朗讀改用 MiniMax 雲端語音；失敗時自動改用系統語音。"
+            android:textSize="13sp"
+            android:textColor="@color/onSurface"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchMiniMax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="使用 MiniMax 語音"
+            android:textSize="15sp"
+            android:layout_marginBottom="12dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="MiniMax API Key"
+            android:layout_marginBottom="12dp"
+            app:endIconMode="password_toggle"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMmApiKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="API Host"
+            android:layout_marginBottom="12dp"
+            app:helperText="國際版 https://api.minimax.io ／ 國內版 https://api.minimaxi.com"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMmHost"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textNoSuggestions"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="模型"
+            android:layout_marginBottom="12dp"
+            app:helperText="例如 speech-02-turbo、speech-02-hd"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMmModel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Voice ID"
+            android:layout_marginBottom="20dp"
+            app:helperText="例如 female-shaonv、male-qn-qingse，或自訂／複製的聲音 ID"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMmVoiceId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:textColor="@color/onSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/btnSaveMiniMax"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="儲存 MiniMax 設定"
+            android:textSize="15sp"
+            android:layout_marginBottom="10dp"
+            android:stateListAnimator="@null" />
+
+        <Button
+            android:id="@+id/btnTestMiniMax"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="試聽"
+            android:textSize="15sp"
+            android:layout_marginBottom="10dp"
+            android:textColor="@color/primary"
+            android:backgroundTint="@color/primaryContainer"
+            android:stateListAnimator="@null" />
+
+        <TextView
+            android:id="@+id/tvMiniMaxStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
     </LinearLayout>
 </ScrollView>

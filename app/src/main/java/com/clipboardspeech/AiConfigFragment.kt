@@ -32,6 +32,8 @@ class AiConfigFragment : Fragment() {
     private var _binding: FragmentAiConfigBinding? = null
     private val binding get() = _binding!!
 
+    private var miniMaxPreview: MiniMaxTts? = null
+
     private val httpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -86,6 +88,8 @@ class AiConfigFragment : Fragment() {
         binding.btnTestConnection.setOnClickListener {
             testConnection()
         }
+
+        setupMiniMax()
 
         binding.btnClearAiConfig.setOnClickListener {
             requireContext()
@@ -369,6 +373,54 @@ class AiConfigFragment : Fragment() {
         _binding?.cardTestResult?.visibility = View.GONE
     }
 
+    // ── MiniMax 語音 ──────────────────────────────────────────────────────────
+
+    private fun setupMiniMax() {
+        val cfg = MiniMaxTts.loadConfig(requireContext())
+        binding.switchMiniMax.isChecked = cfg.enabled
+        binding.etMmApiKey.setText(cfg.apiKey)
+        binding.etMmHost.setText(cfg.host)
+        binding.etMmModel.setText(cfg.model)
+        binding.etMmVoiceId.setText(cfg.voiceId)
+
+        binding.btnSaveMiniMax.setOnClickListener {
+            val c = miniMaxConfigFromUi()
+            if (c.enabled && c.apiKey.isBlank()) {
+                showMiniMaxStatus(false, "請先輸入 MiniMax API Key")
+                return@setOnClickListener
+            }
+            MiniMaxTts.saveConfig(requireContext(), c)
+            showMiniMaxStatus(true, if (c.enabled) "已儲存，朗讀將使用 MiniMax 語音" else "已儲存，朗讀使用系統語音")
+        }
+
+        binding.btnTestMiniMax.setOnClickListener {
+            val c = miniMaxConfigFromUi()
+            if (c.apiKey.isBlank()) {
+                showMiniMaxStatus(false, "請先輸入 MiniMax API Key")
+                return@setOnClickListener
+            }
+            showMiniMaxStatus(true, "合成中…")
+            val tts = miniMaxPreview ?: MiniMaxTts(requireContext().applicationContext).also { miniMaxPreview = it }
+            tts.speak(c, "你好，這是 MiniMax 語音測試。", null, 1.0f, 1.0f,
+                onDone = { if (_binding != null) showMiniMaxStatus(true, "試聽完成 ✓") },
+                onError = { msg -> if (_binding != null) showMiniMaxStatus(false, msg) })
+        }
+    }
+
+    private fun miniMaxConfigFromUi() = MiniMaxTts.Config(
+        enabled = binding.switchMiniMax.isChecked,
+        apiKey = binding.etMmApiKey.text?.toString()?.trim().orEmpty(),
+        host = binding.etMmHost.text?.toString()?.trim().orEmpty().ifBlank { MiniMaxTts.DEFAULT_HOST },
+        model = binding.etMmModel.text?.toString()?.trim().orEmpty().ifBlank { MiniMaxTts.DEFAULT_MODEL },
+        voiceId = binding.etMmVoiceId.text?.toString()?.trim().orEmpty().ifBlank { MiniMaxTts.DEFAULT_VOICE }
+    )
+
+    private fun showMiniMaxStatus(ok: Boolean, msg: String) {
+        binding.tvMiniMaxStatus.setTextColor(Color.parseColor(if (ok) "#1E6B3C" else "#B3261E"))
+        binding.tvMiniMaxStatus.text = msg
+        binding.tvMiniMaxStatus.visibility = View.VISIBLE
+    }
+
     // ── Config persistence ────────────────────────────────────────────────────
 
     private fun loadConfig() {
@@ -398,6 +450,8 @@ class AiConfigFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        miniMaxPreview?.release()
+        miniMaxPreview = null
         super.onDestroyView()
         _binding = null
     }

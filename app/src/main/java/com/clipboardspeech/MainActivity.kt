@@ -59,6 +59,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var availableVoices: List<Voice> = emptyList()
     private var selectedVoiceIndex: Int = -1
 
+    // MiniMax cloud TTS: used instead of system TTS when enabled in AI Config.
+    // miniMaxConfig is captured per read-through; null = system TTS.
+    private val miniMax by lazy { MiniMaxTts(this) }
+    private var miniMaxConfig: MiniMaxTts.Config? = null
+
     private var audioManager: AudioManager? = null
     private var audioFocusRequest: AudioFocusRequest? = null
 
@@ -161,6 +166,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (availableVoices.isNotEmpty()) {
             applySelectedVoice()
         }
+        showMiniMaxVoiceLabel()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showMiniMaxVoiceLabel()
+    }
+
+    private fun showMiniMaxVoiceLabel() {
+        val cfg = MiniMaxTts.activeConfig(this) ?: return
+        binding.tvVoiceName.text = "MiniMax · ${cfg.voiceId}"
     }
 
     private fun applySelectedVoice() {
@@ -379,7 +395,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     // ---- TTS Actions ----
 
     private fun startSpeaking() {
-        if (!ttsReady) {
+        miniMaxConfig = MiniMaxTts.activeConfig(this)
+        miniMax.clearCache()
+        if (!ttsReady && miniMaxConfig == null) {
             showSnackbar(getString(R.string.msg_tts_unavailable))
             return
         }
@@ -421,6 +439,27 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val sentence = sentences[idx]
         val textToSpeak = if (wordOffset > 0 && wordOffset < sentence.length)
             sentence.substring(wordOffset) else sentence
+        miniMaxConfig?.let { cfg ->
+            // MiniMax has no word callbacks: highlight the whole chunk, resume from its start
+            val base = sentenceOffsets.getOrElse(idx) { 0 }
+            runOnUiThread { highlightWord(base + resumeOffsetInSentence, base + sentence.length) }
+            miniMax.speak(
+                cfg, textToSpeak, sentences.getOrNull(idx + 1), speechRate, pitchValue,
+                onDone = { utteranceProgressListener.onDone(utteranceId) },
+                onError = { msg ->
+                    if (pausedByUser) return@speak
+                    miniMaxConfig = null   // fall back to system TTS for the rest of this read
+                    if (ttsReady) {
+                        showSnackbar("$msg — 改用系統語音")
+                        speakSentence(idx, wordOffset)
+                    } else {
+                        showSnackbar(msg)
+                        onSpeechFinished()
+                    }
+                }
+            )
+            return
+        }
         val params = Bundle()
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
         tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
@@ -500,6 +539,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (uiState == UiState.SPEAKING) {
             pausedByUser = true   // blocks onDone from chaining to next sentence
             tts?.stop()
+            miniMax.stop()
             setUiState(UiState.PAUSED)
         } else if (uiState == UiState.PAUSED) {
             pausedByUser = false
@@ -513,6 +553,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun stopSpeaking() {
         pausedByUser = true   // blocks onDone from chaining after tts.stop()
         tts?.stop()
+        miniMax.stop()
         abandonAudioFocus()
         setUiState(UiState.IDLE)
     }
@@ -669,6 +710,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun clearText() {
         tts?.stop()
+        miniMax.stop()
         abandonAudioFocus()
         binding.etInput.setText("")
         setUiState(UiState.IDLE)
@@ -977,6 +1019,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
+        miniMax.release()
         abandonAudioFocus()
         super.onDestroy()
     }
