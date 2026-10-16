@@ -977,7 +977,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun showSummaryError(message: String) {
         binding.summaryLoadingRow.visibility = View.GONE
-        binding.tvSummaryContent.setTextColor(android.graphics.Color.parseColor("#B3261E"))
+        binding.tvSummaryContent.setTextColor(ContextCompat.getColor(this, R.color.error))
         binding.tvSummaryContent.text = message
         binding.scrollSummaryContent.visibility = View.VISIBLE
         binding.scrollSummaryContent.scrollTo(0, 0)

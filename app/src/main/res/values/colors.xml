@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#1b6ef3</color>
-    <color name="primaryContainer">#d8e3ff</color>
-    <color name="onPrimaryContainer">#001257</color>
-    <color name="surface">#faf8ff</color>
-    <color name="surfaceVariant">#e2e1ec</color>
-    <color name="onSurface">#1b1b21</color>
-    <color name="onSurfaceVariant">#44445a</color>
-    <color name="outlineVariant">#c6c5d0</color>
-    <color name="error">#ba1a1a</color>
-    <color name="errorContainer">#fce8e6</color>
-    <color name="secondaryContainer">#e4dfff</color>
-    <color name="onSecondaryContainer">#1b0062</color>
+    <color name="primary">#A5643A</color>
+    <color name="primaryContainer">#EDE5DA</color>
+    <color name="onPrimaryContainer">#2F2721</color>
+    <color name="surface">#FAF7F1</color>
+    <color name="surfaceVariant">#EDE5DA</color>
+    <color name="onSurface">#2F2721</color>
+    <color name="onSurfaceVariant">#6E6157</color>
+    <color name="outlineVariant">#D9CFC3</color>
+    <color name="error">#B3261E</color>
+    <color name="errorContainer">#FBE9E5</color>
+    <color name="secondaryContainer">#EDE5DA</color>
+    <color name="onSecondaryContainer">#2F2721</color>
     <color name="white">#FFFFFF</color>
-    <color name="hintText">#9494a8</color>
-    <color name="outline">#767690</color>
+    <color name="hintText">#9A8D80</color>
+    <color name="outline">#B9AC9E</color>
+    <color name="headerBackground">#4A3F35</color>
+    <color name="onHeader">#FFFFFF</color>
+    <color name="pageBackground">#E6DED3</color>
+    <color name="accentPressed">#8A4F2B</color>
+    <color name="success">#6B7D4A</color>
+    <color name="successContainer">#E8EBD9</color>
 </resources>

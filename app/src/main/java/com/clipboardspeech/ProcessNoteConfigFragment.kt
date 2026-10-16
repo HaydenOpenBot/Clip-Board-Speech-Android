@@ -1,7 +1,6 @@
 package com.clipboardspeech
 
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.doAfterTextChanged
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -202,7 +202,7 @@ class ProcessNoteConfigFragment : Fragment() {
         binding.tvProcessNoteTestResultIcon.text = icon
         binding.tvProcessNoteTestResultMsg.text = msg
         binding.tvProcessNoteTestResultMsg.setTextColor(
-            Color.parseColor(if (success) "#1E6B3C" else "#B3261E")
+            ContextCompat.getColor(ctx, if (success) R.color.success else R.color.error)
         )
         card.visibility = View.VISIBLE
     }
@@ -274,7 +274,7 @@ class ProcessNoteLogAdapter : RecyclerView.Adapter<ProcessNoteLogAdapter.VH>() {
                 if (!entry.serverMessage.isNullOrEmpty()) {
                     b.tvServerMessage.visibility = View.VISIBLE
                     b.tvServerMessage.text = entry.serverMessage
-                    b.tvServerMessage.setTextColor(Color.parseColor("#1E6B3C"))
+                    b.tvServerMessage.setTextColor(ContextCompat.getColor(b.root.context, R.color.success))
                 }
             }
             "failed" -> {
@@ -282,7 +282,7 @@ class ProcessNoteLogAdapter : RecyclerView.Adapter<ProcessNoteLogAdapter.VH>() {
                 if (!entry.serverMessage.isNullOrEmpty()) {
                     b.tvServerMessage.visibility = View.VISIBLE
                     b.tvServerMessage.text = entry.serverMessage
-                    b.tvServerMessage.setTextColor(Color.parseColor("#B3261E"))
+                    b.tvServerMessage.setTextColor(ContextCompat.getColor(b.root.context, R.color.error))
                 }
             }
         }

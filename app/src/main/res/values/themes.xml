@@ -7,14 +7,22 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSecondary">@color/secondaryContainer</item>
         <item name="colorOnSecondary">@color/onSecondaryContainer</item>
-        <item name="android:colorBackground">@color/surface</item>
+        <item name="colorPrimaryContainer">@color/primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/onPrimaryContainer</item>
+        <item name="colorSecondaryContainer">@color/secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/onSecondaryContainer</item>
+        <item name="android:colorBackground">@color/pageBackground</item>
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/onSurface</item>
+        <item name="colorOnSurfaceVariant">@color/onSurfaceVariant</item>
+        <item name="colorControlActivated">@color/primary</item>
+        <item name="colorControlNormal">@color/onSurfaceVariant</item>
+        <item name="colorControlHighlight">@color/primaryContainer</item>
         <item name="colorError">@color/error</item>
         <item name="colorOnError">@color/white</item>
-        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:statusBarColor">@color/headerBackground</item>
         <item name="android:navigationBarColor">@color/surface</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <style name="Theme.ClipBoardSpeech.BottomSheetDialog" parent="Theme.MaterialComponents.BottomSheetDialog">

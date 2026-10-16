@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface">
+    android:background="@color/pageBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -33,6 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Endpoint URL"
+            app:placeholderText="https://claude-pm.gynlhmc.com/api/process-note"
             android:layout_marginBottom="20dp"
             app:helperText="POST /api/process-note"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -41,7 +42,6 @@
                 android:id="@+id/etEndpointUrl"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="https://claude-pm.gynlhmc.com/api/process-note"
                 android:inputType="textNoSuggestions"
                 android:textColor="@color/onSurface" />
         </com.google.android.material.textfield.TextInputLayout>

@@ -1,7 +1,6 @@
 package com.clipboardspeech
 
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.doAfterTextChanged
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.clipboardspeech.databinding.FragmentAiConfigBinding
@@ -353,11 +353,11 @@ class AiConfigFragment : Fragment() {
         val ctx = requireContext()
 
         if (success) {
-            card.setBackgroundColor(Color.parseColor("#E6F4EA"))  // light green
-            binding.tvTestResultMsg.setTextColor(Color.parseColor("#1E6B3C"))
+            card.setBackgroundColor(ContextCompat.getColor(ctx, R.color.successContainer))
+            binding.tvTestResultMsg.setTextColor(ContextCompat.getColor(ctx, R.color.success))
         } else {
-            card.setBackgroundColor(Color.parseColor("#FCE8E6"))  // light red
-            binding.tvTestResultMsg.setTextColor(Color.parseColor("#B3261E"))
+            card.setBackgroundColor(ContextCompat.getColor(ctx, R.color.errorContainer))
+            binding.tvTestResultMsg.setTextColor(ContextCompat.getColor(ctx, R.color.error))
         }
         // Rounded background via drawable
         card.background = ctx.getDrawable(
@@ -416,7 +416,7 @@ class AiConfigFragment : Fragment() {
     )
 
     private fun showMiniMaxStatus(ok: Boolean, msg: String) {
-        binding.tvMiniMaxStatus.setTextColor(Color.parseColor(if (ok) "#1E6B3C" else "#B3261E"))
+        binding.tvMiniMaxStatus.setTextColor(ContextCompat.getColor(requireContext(), if (ok) R.color.success else R.color.error))
         binding.tvMiniMaxStatus.text = msg
         binding.tvMiniMaxStatus.visibility = View.VISIBLE
     }
