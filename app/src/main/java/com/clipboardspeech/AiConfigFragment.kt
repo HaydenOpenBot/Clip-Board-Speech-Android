@@ -401,7 +401,7 @@ class AiConfigFragment : Fragment() {
             }
             showMiniMaxStatus(true, "合成中…")
             val tts = miniMaxPreview ?: MiniMaxTts(requireContext().applicationContext).also { miniMaxPreview = it }
-            tts.speak(c, "你好，這是 MiniMax 語音測試。", null, 1.0f, 1.0f,
+            tts.speak(c, "你好，這是 MiniMax 語音測試。", emptyList(), 1.0f, 1.0f,
                 onDone = { if (_binding != null) showMiniMaxStatus(true, "試聽完成 ✓") },
                 onError = { msg -> if (_binding != null) showMiniMaxStatus(false, msg) })
         }

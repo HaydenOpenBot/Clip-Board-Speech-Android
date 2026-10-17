@@ -25,7 +25,7 @@ import kotlin.math.roundToInt
 
 /**
  * Cloud TTS via MiniMax T2A v2 (/v1/t2a_v2). Each chunk is synthesized to an mp3 in cacheDir
- * and played with MediaPlayer; the next chunk is prefetched while the current one plays.
+ * and played with MediaPlayer; upcoming groups are prefetched while the current one plays.
  * All callbacks are delivered on the main thread.
  */
 class MiniMaxTts(private val context: Context) {
@@ -87,17 +87,17 @@ class MiniMaxTts(private val context: Context) {
     @Volatile private var generation = 0
 
     /**
-     * Play [text]. [next] (the following chunk) is prefetched so playback doesn't stall between
+     * Play [text]. [next] upcoming groups are prefetched so playback doesn't stall between
      * chunks. [rate] 0.5..2.0 maps 1:1 to MiniMax speed; [pitch] 0.5..2.0 maps to -12..12.
      */
     fun speak(
-        config: Config, text: String, next: String?, rate: Float, pitch: Float,
+        config: Config, text: String, next: List<String>, rate: Float, pitch: Float,
         onDone: () -> Unit, onError: (String) -> Unit
     ) {
         stop()
         val gen = generation
         val audio = fetch(config, text, rate, pitch)
-        if (next != null) fetch(config, next, rate, pitch)
+        next.forEach { fetch(config, it, rate, pitch) }
 
         playJob = scope.launch {
             val file = try {
@@ -112,6 +112,7 @@ class MiniMaxTts(private val context: Context) {
                 if (gen != generation) return@withContext
                 try {
                     player = MediaPlayer().apply {
+                        setWakeMode(context, android.os.PowerManager.PARTIAL_WAKE_LOCK)
                         setAudioAttributes(
                             AudioAttributes.Builder()
                                 .setUsage(AudioAttributes.USAGE_MEDIA)

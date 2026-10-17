@@ -90,13 +90,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     // Speed/pitch: slider max=15, progress 0..15 maps to 0.5..2.0 (step 0.1)
-    private var speechRate: Float = 1.8f
+    private var speechRate: Float = 1.5f
     private var pitchValue: Float = 1.0f
 
     private val utteranceId = "CBS_UTTERANCE"
 
     // D-006: runtime storage permission
     private val REQUEST_WRITE_STORAGE = 1001
+    private val REQUEST_POST_NOTIFICATIONS = 1002
+    private var notificationPermissionRequested = false
     private var pendingSaveText: String? = null
 
     // OkHttp client for AI requests
@@ -272,9 +274,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
-        // Default progress=13 -> 1.8x
-        binding.seekSpeed.progress = 13
-        binding.tvSpeedValue.text = "1.8×"
+        // Default progress=10 -> 1.5x
+        binding.seekSpeed.progress = 10
+        binding.tvSpeedValue.text = "1.5×"
 
         // Pitch: progress 0..15 -> pitch 0.5..2.0
         binding.seekPitch.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -408,6 +410,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         fullText = text
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !notificationPermissionRequested &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionRequested = true
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_POST_NOTIFICATIONS)
+        }
         binding.tvReadAlong.text = fullText
 
         tts?.setSpeechRate(speechRate)
@@ -422,6 +430,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         pauseWordOffsetInSentence = 0
 
         requestAudioFocus()
+        SpeakingService.start(this)
         speakSentence(0, 0)
         setUiState(UiState.SPEAKING)
     }
@@ -440,12 +449,26 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val textToSpeak = if (wordOffset > 0 && wordOffset < sentence.length)
             sentence.substring(wordOffset) else sentence
         miniMaxConfig?.let { cfg ->
-            // MiniMax has no word callbacks: highlight the whole chunk, resume from its start
+            val groupLastIdx = if (wordOffset > 0 || idx == 0) idx else miniMaxGroupLastIndex(idx)
+            val groupText = if (groupLastIdx == idx) textToSpeak else {
+                (idx + 1..groupLastIdx).fold(textToSpeak) { acc, nextIdx ->
+                    acc + miniMaxSeparator(acc.lastOrNull(), sentences[nextIdx].firstOrNull()) + sentences[nextIdx]
+                }
+            }
+            val groupEnd = sentenceOffsets[groupLastIdx] + sentences[groupLastIdx].length
             val base = sentenceOffsets.getOrElse(idx) { 0 }
-            runOnUiThread { highlightWord(base + resumeOffsetInSentence, base + sentence.length) }
+            runOnUiThread { highlightWord(base + resumeOffsetInSentence, groupEnd) }
+            val nextGroups = if (groupLastIdx + 1 < sentences.size) {
+                miniMaxUpcomingTexts(groupLastIdx + 1, 2)
+            } else emptyList()
             miniMax.speak(
-                cfg, textToSpeak, sentences.getOrNull(idx + 1), speechRate, pitchValue,
-                onDone = { utteranceProgressListener.onDone(utteranceId) },
+                cfg, groupText, nextGroups, speechRate, pitchValue,
+                onDone = {
+                    if (pausedByUser) return@speak
+                    currentSentenceIdx = groupLastIdx
+                    if (groupLastIdx + 1 < sentences.size) speakSentence(groupLastIdx + 1, 0)
+                    else onSpeechFinished()
+                },
                 onError = { msg ->
                     if (pausedByUser) return@speak
                     miniMaxConfig = null   // fall back to system TTS for the rest of this read
@@ -464,6 +487,41 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId)
         tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
     }
+
+    private fun miniMaxGroupLastIndex(start: Int): Int {
+        var last = start
+        var length = sentences[start].length
+        while (last + 1 < sentences.size && length < 120) {
+            last++
+            length += 1 + sentences[last].length
+        }
+        return last
+    }
+
+    private fun miniMaxUpcomingTexts(start: Int, count: Int): List<String> {
+        val result = mutableListOf<String>()
+        var idx = start
+        repeat(count) {
+            if (idx >= sentences.size) return@repeat
+            val last = miniMaxGroupLastIndex(idx)
+            result += joinMiniMaxTexts(idx, last)
+            idx = last + 1
+        }
+        return result
+    }
+
+    private fun joinMiniMaxTexts(start: Int, end: Int): String {
+        if (start == end) return sentences[start]
+        return (start..end).fold(sentences[start]) { acc, idx ->
+            if (idx == start) acc else acc + miniMaxSeparator(acc.lastOrNull(), sentences[idx].firstOrNull()) + sentences[idx]
+        }
+    }
+
+    private fun miniMaxSeparator(left: Char?, right: Char?): String =
+        if (left != null && right != null && (left.isCjk() || right.isCjk())) "" else " "
+
+    private fun Char.isCjk(): Boolean =
+        code in 0x2E80..0x9FFF || code in 0xF900..0xFAFF || code in 0x20000..0x2FA1F
 
     /**
      * Split text into speakable chunks small enough that pause/resume never loses more than
@@ -540,12 +598,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             pausedByUser = true   // blocks onDone from chaining to next sentence
             tts?.stop()
             miniMax.stop()
+            SpeakingService.stop(this)
             setUiState(UiState.PAUSED)
         } else if (uiState == UiState.PAUSED) {
             pausedByUser = false
             // Resume from the exact word where speech stopped (word-level if engine supports
             // onRangeStart, otherwise sentence-level fallback)
             speakSentence(currentSentenceIdx, pauseWordOffsetInSentence)
+            SpeakingService.start(this)
             setUiState(UiState.SPEAKING)
         }
     }
@@ -554,11 +614,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         pausedByUser = true   // blocks onDone from chaining after tts.stop()
         tts?.stop()
         miniMax.stop()
+        SpeakingService.stop(this)
         abandonAudioFocus()
         setUiState(UiState.IDLE)
     }
 
     private fun onSpeechFinished() {
+        SpeakingService.stop(this)
         abandonAudioFocus()
         setUiState(UiState.IDLE)
     }
@@ -711,6 +773,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun clearText() {
         tts?.stop()
         miniMax.stop()
+        SpeakingService.stop(this)
         abandonAudioFocus()
         binding.etInput.setText("")
         setUiState(UiState.IDLE)
@@ -1020,6 +1083,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts?.stop()
         tts?.shutdown()
         miniMax.release()
+        SpeakingService.stop(this)
         abandonAudioFocus()
         super.onDestroy()
     }
